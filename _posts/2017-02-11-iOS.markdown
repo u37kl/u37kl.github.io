@@ -7,7 +7,6 @@ author:     "Hux"
 header-img: "img/post-bg-rwd.jpg"
 header-mask: 0.3
 tags:
-    - iOS
-    - Runtime
+    - iOS-Runtime
 ---
 
