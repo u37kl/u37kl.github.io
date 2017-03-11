@@ -12,7 +12,6 @@ tags:
 ##1.KVO最重要的两个方法：
 
 
-
 ```
 0.为OC对象设置观察者
 1.调用该方法的对象是被监视的一方
@@ -98,16 +97,27 @@ ViewController.m
     self.a.blance = @"AAASAAA";
     self.a.interent = @"bbbs";  
 }
-
+    
+```
 ![](/img/iOS/KVOBase_1.png)
 
+```
 注释1: 根据context对象，可以区分被监听的对象的哪个属性改变；可以区分父类还是子类来监听这个属性。
-注释2: observeValueForKeyPath方法中的change字典中的key：
-    NSKeyValueChangeKindKey: 属性操作类型
-    NSKeyValueChangeNewKey: 返回新值
-    NSKeyValueChangeOldKey: 返回旧值
+注释2: change字典中会包含观察的属性的变化情况，通过字典中的key值来获取。
+    observeValueForKeyPath方法中的change字典中的key：
+    NSKeyValueChangeKindKey: 属性操作类型，数值修改、添加、删除、替换(后三个针对于数组)
+    NSKeyValueChangeNewKey: 返回新值，变化后的值
+    NSKeyValueChangeOldKey: 返回旧值，变化前的值
     NSKeyValueChangeIndexesKey: 返回索引，用在监听数组的方法中国年
     NSKeyValueChangeNotificationIsPriorKey:
     
+注释3: NSKeyValueObservingOptions参数
+    NSKeyValueObservingOptionNew
+    NSKeyValueObservingOptionOld
+    NSKeyValueObservingOptionInitial
+    NSKeyValueObservingOptionPrior
 ```
+
+##监听数组
+
 
