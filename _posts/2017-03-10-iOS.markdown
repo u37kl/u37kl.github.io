@@ -9,4 +9,105 @@ header-mask: 0.3
 tags:
     - iOS-KVO
 ---
+##1.KVO最重要的两个方法：
+
+
+
+```
+0.为OC对象设置观察者
+1.调用该方法的对象是被监视的一方
+2.observer: 监视者
+3.keyPath: 要监视对方的属性
+4.options: 当属性发生变化时，告诉监视者旧的属性、新的属性
+5.context: 上下文，当A观察B时，A的父类C也会观察B，用该属性来区分当属性变化时，通知发给A还是C
+
+- (void)addObserver:(NSObject *)observer 
+        forKeyPath:(NSString *)keyPath 
+        options:(NSKeyValueObservingOptions)options
+        context:(nullable void *)context;
+
+0.为在观察者类中实现的方法，使用该方法通知观察者，被观察者的属性变化了
+1.keyPath: 监视的对方属性
+2.object: 监视的对方对象实例
+3.change: 保存被观察者属性发生的变化
+4.context: 上下文，区分父类还是子类观察该属性变化
+
+- (void)observeValueForKeyPath:(nullable NSString *)keyPath
+        ofObject:(nullable id)object 
+        change:(nullable NSDictionary<NSKeyValueChangeKey, id> *)change     
+        context:(nullable void *)context;
+
+```
+
+##KVO使用实例
+
+```
+Account.h
+
+static void *AccountBlance = "AccountBlance";
+static void *AccountInterent = "AccountInterent";
+
+@interface Account : NSObject
+    @property(nonatomic, copy) NSString *blance;
+    @property(nonatomic, copy) NSString *interent;
+@end
+
+Person.m
+@implementation Person
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
+{
+    // 注释1
+    if (context == AccountBlance) {
+        NSLog(@"blance");
+        // 注释2
+        self.name = change[NSKeyValueChangeNewKey];
+    }else{
+        NSLog(@"interent");
+        self.name = change[NSKeyValueChangeNewKey];
+    }
+}
+
+ViewController.m
+@interface ViewController ()
+    @property (nonatomic, strong)Person *p;
+    @property (nonatomic, strong)Account *a;
+@end
+
+@implementation ViewController
+- (void)viewDidLoad(){
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
+    
+    UIButton *btn = [[UIButton alloc] initWithFrame:CGRectMake(50, 50, 100, 50)];
+    [btn setBackgroundColor:[UIColor redColor]];
+    [btn addTarget:self action:@selector(test) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btn];
+    
+    self.p = [[Person alloc] init];
+    self.a = [[Account alloc] init];
+    
+    [self.a addObserver:self.p forKeyPath:@"blance" options:NSKeyValueObservingOptionNew context:AccountBlance];
+    
+    [self.a addObserver:self.p forKeyPath:@"interent" options:NSKeyValueObservingOptionNew context:AccountInterent];
+}
+
+- (void)test{
+
+    // 监听Account对象
+    self.a.blance = @"AAASAAA";
+    self.a.interent = @"bbbs";  
+}
+
+![](/img/iOS/KVOBase_1.png)
+
+注释1: 根据context对象，可以区分被监听的对象的哪个属性改变；可以区分父类还是子类来监听这个属性。
+注释2: observeValueForKeyPath方法中的change字典中的key：
+    NSKeyValueChangeKindKey: 属性操作类型
+    NSKeyValueChangeNewKey: 返回新值
+    NSKeyValueChangeOldKey: 返回旧值
+    NSKeyValueChangeIndexesKey: 返回索引，用在监听数组的方法中国年
+    NSKeyValueChangeNotificationIsPriorKey:
+    
+```
 
