@@ -9,7 +9,7 @@ header-mask: 0.3
 tags:
     - iOS-KVO
 ---
-## 1.KVO最重要的三个方法：
+# 1.KVO最重要的三个方法：
 
 
 ```
@@ -44,7 +44,7 @@ tags:
 
 ```
 
-## 2.KVO使用实例--监听对象属性、监听数组
+# 2.KVO使用实例--监听对象属性、监听数组
 
 ```
 Account.h
@@ -135,7 +135,7 @@ ViewController.m
     
 ```
 
-## 3.移除监听
+# 3.移除监听
 
 >如果多次删除同一个监听的属性，就会报下面的错误。
 reason: 'Cannot  remove an observer <Person 0x7f86fac0a620> for the key path "blance" from <Account 0x600000026e00> 
@@ -255,7 +255,7 @@ because it is not registered as an observer.'
 
 ```
 
-## 4.手动KVO
+# 4.手动KVO
 >KVO默认是自动监听，即当属性发生变化时，自定发送通知给监听者，也可以手动发送通知给监听者。
 
 ```
@@ -285,10 +285,10 @@ because it is not registered as an observer.'
 - (void)didChangeValueForKey:(NSString *)key;
 ```
 
-## 5.属性依赖性
+# 5.属性依赖性
 
      
-## 总结
+# 总结
 >1. KVO是使用RunTime来实现对象的监听。
 >2. KVO是建立对象之间的关系，不是类与类之间的关系。
 >3. KVO不保存监听者和被监听者，需要程序员自己进行保存。
