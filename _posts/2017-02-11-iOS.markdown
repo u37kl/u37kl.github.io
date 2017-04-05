@@ -12,7 +12,7 @@ tags:
 
 ## 获取对象中属性名称、属性类型、属性值
 
-**代码**
+**Ivar - 代码1**
 
 ```
 
@@ -48,6 +48,32 @@ tags:
 ```
 
 
+**property - 代码2**
+
+```
+
+
+    // 获取对象的类文件
+    Class clazz = objc_getClass(@"OrgTableModel".UTF8String);
+    
+    int paramCount = 0;
+    // 获取该类的所有属性列表，会取出该类的所有属性，包括写在.m文件中的私有属性
+    objc_property_t *property = class_copyPropertyList(clazz, &paramCount);
+    // 遍历属性列表
+    for (int i=0; i<paramCount; i++) {
+        // 获取属性名称
+        const char *paramName = property_getName(property0[i]);
+        
+        NSString *paramNameStr = [[NSString stringWithUTF8String:paramName] substringFromIndex:1];
+        // 取出该属性的值
+        id value = [obj valueForKey:paramNameStr];
+    }
+    
+    // 释放内存
+    free(property);
+    
+```
+
 －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 
 **API介绍**
@@ -78,6 +104,31 @@ tags:
 6. long : l
 7. double : d
 8. BOOL : B
+
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+
+**class_copyIvarList 与 class_copyPropertyList区别**
+
+1. class_copyPropertyList ：对象成员属性(@propert关键字修饰的对象属性)
+2. class_copyIvarList ：对象成员属性 ＋ 对象成员变量
+
+```
+
+@interface OrgTableModel : NSObject
+{
+    NSString *orgFullName;   -- 对象成员变量
+    NSString *orgEmail;
+}
+// 组织ID
+@property (nonatomic, assign) NSInteger orgId; -- 对象成员属性
+// 组织类型(商会、协会等)
+@property (nonatomic, copy) NSString *orgType;
+// 组织简称
+@property (nonatomic, copy) NSString *orgShortName;
+
+@end
+
+```
 
 
 ## 实例：Model转SQL语句
