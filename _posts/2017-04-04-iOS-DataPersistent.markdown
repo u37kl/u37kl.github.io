@@ -1,13 +1,13 @@
 ---
 layout:     post
-title:      "SQL之旅"
+title:      "数据库之旅"
 subtitle:   "SQL－C语言API"
 date:       2017-02-03 12:00:00
 author:     "Hux"
 header-img: "img/post-bg-rwd.jpg"
 header-mask: 0.3
 tags:
-    - SQL
+    - 数据库
 ---
 
 ## sqlite3的C语言API
