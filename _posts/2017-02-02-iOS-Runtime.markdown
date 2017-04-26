@@ -100,9 +100,14 @@ struct objc_method_list {
 } 
 ```
 
-## RunTime获取实例duix
+## RunTime类对象方法
 
 **Example:**
+
+```
+
+
+```
 
 
 
