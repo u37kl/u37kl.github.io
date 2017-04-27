@@ -12,7 +12,7 @@ tags:
 
 ## OC对象的结构
 
-![](/img/iOS/RunTime_1.png)
+![](/img/iOS/2017-02-01-iOS-Runtime_1.png)
 
 **上图讲解(虚线: isa，实线: superClass)**
 

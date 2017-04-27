@@ -100,14 +100,162 @@ struct objc_method_list {
 } 
 ```
 
-## RunTime类对象方法
+## class_
 
-**Example:**
+**获取类属性**
+
+```
+// 获取类属性
+
+const char * class_getName(Class cls); －－ 获取类的名称
+Class class_getSuperclass(Class cls);  －－ 获取类的父类
+size_t class_getInstanceSize(Class cls) －－ 获取该类实例对象的字节数
+int class_getVersion(Class theClass)  －－ 获取该类的版本号
+
+// 类中方法、协议存在性判断
+BOOL class_respondsToSelector(Class cls, SEL sel) －－ 判断该类是否实现该方法
+BOOL class_conformsToProtocol(Class cls, Protocol *protocol)－－判断该类是否遵循某个协议
+
+```
+
+**例子**
+
+```
+类：@interface TestViewController : UIViewController
+
+- (void)testAFN{
+    
+    const char *className = class_getName([self class]);
+    int classVersion = class_getVersion([self class]);
+    Class superClazz = class_getSuperclass([self class]);
+    size_t size = class_getInstanceSize([self class]);
+    
+    // 判断实例对象是否有run方法
+    BOOL isInstanceExist = class_respondsToSelector([self class], @selector(run));
+    
+    // 判断类对象是否有run方法
+    BOOL isClassExit = class_respondsToSelector(object_getClass(object_getClass(self)), @selector(run));
+}
+- (void)run
+{
+
+}
+
+```
+![](/img/iOS/2017-02-02-iOS-Runtime_1.png)
+
+
+
+**获取实例对象的成员变量**
+
+```
+// 获取实例对象的成员变量
+Ivar class_getInstanceVariable(Class cls, const char* name) 
+// 获取类对象的成员变量
+Ivar class_getClassVariable(Class cls, const char* name)
+// 给实例对象添加成员变量
+BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types)
+// 获取类对象中的成员变量列表
+Ivar * class_copyIvarList(Class cls, unsigned int *outCount)
+
+note：
+
+class_addIvar()函数只能在用户自定义创建类定义时才能使用，不能在使用实例对象时，动态添加成员变量，因为实例对象的成员变量列表保存在类对象中，这样会造成之前创建的实例对象没有刚添加的成员变量，由此导致之前创建的类废了。
+
+```
+
+**例子**
+
+```
+- (void)testAFN{
+    NSLog(@"%s", class_getName([self class]));
+    // 运行时创建类
+    Class clazz = objc_allocateClassPair([Person class], "WoMan", 0);
+    
+    // 添加实例对象的成员变量，指针类型使用log2()函数包裹
+    class_addIvar(clazz, "firstName", class_getInstanceSize([NSString class]), log2(class_getInstanceSize([NSString class])), @encode(NSString *));
+    class_addIvar(clazz, "secondName", class_getInstanceSize([NSString class]), log2(class_getInstanceSize([NSString class])), @encode(NSString *));
+    class_addIvar(clazz, "sex", sizeof(BOOL), sizeof(BOOL), @encode(BOOL));
+    class_addIvar(clazz, "grade", sizeof(NSInteger), sizeof(NSInteger), @encode(NSInteger));
+    class_addIvar(clazz, "student", class_getInstanceSize([Student class]), log2(class_getInstanceSize([Student class])), @encode(Student *));
+    
+    // 将类注册进去
+    objc_registerClassPair(clazz);
+    // 创建自定义类的实例对象
+    id s = [[clazz alloc] init];
+    // 根据类对象和成员变量名称获取成员变量定义
+    Ivar var0 = class_getInstanceVariable(clazz, "firstName");
+    // 为实例变量设置值
+    object_setIvar(s, var0, @"peter");
+    
+    
+    Ivar var1 = class_getInstanceVariable(clazz, "secondName");
+    object_setIvar(s, var1, @"zpsss");
+    
+    
+    Ivar var2 = class_getInstanceVariable(clazz, "sex");
+    object_setIvar(s, var2, @(1));
+    
+    
+    Ivar var3 = class_getInstanceVariable(clazz, "grade");
+    object_setIvar(s, var3, @(92));
+    
+    
+    Student *stu = [Student new];
+    stu.firstName = @"mary";
+    
+    Ivar var4 = class_getInstanceVariable(clazz, "student");
+    object_setIvar(s, var4, stu);
+    
+    // 获取实例对象的某成员变量的值
+    Student *temp = object_getIvar(s, var4);
+    NSLog(@"%@", temp.firstName);
+    
+    unsigned int outCount = 0;
+    // 获取类对象中的成员变量列表
+    Ivar *var = class_copyIvarList(clazz, &outCount);
+    
+    for (int i=0; i< outCount; i++) {
+        // 获取成员变量名吃
+        const char *ivarName = ivar_getName(var[i]);
+        // 获取成员变量的类型
+        const char *ivarType = ivar_getTypeEncoding(var[i]);
+        NSLog(@"%s,   %s", ivarName, ivarType);
+    }
+}
+
+```
+
+![](/img/iOS/2017-02-02-iOS-Runtime_1.png)
+
+
+
+
+**获取实例对象的成员属性**
+
+
+```
+// 获取成员属性
+objc_property_t class_getProperty(Class cls, const char *name)
+
+// 替换成员属性
+void class_replaceProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount)
+
+// 添加成员属性
+BOOL class_addProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount) －－－ 有待测试，注意objc_property_attribute_t中顺序
+
+
+```
+
+**例子**
+
+```
+给实例对象添加方法、成员变量、成员属性、其实就是向class结构体中添加东西，因为它们的定义都保存在class结构体中
 
 ```
 
 
-```
+
 
 
 
