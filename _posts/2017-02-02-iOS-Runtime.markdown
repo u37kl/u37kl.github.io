@@ -235,6 +235,8 @@ class_addIvar()函数只能在用户自定义创建类定义时才能使用，�
 
 
 ```
+
+
 // 获取成员属性
 objc_property_t class_getProperty(Class cls, const char *name)
 
@@ -250,9 +252,77 @@ BOOL class_addProperty(Class cls, const char *name, const objc_property_attribut
 **例子**
 
 ```
+
+ objc_property_attribute_t type = {"T", "@\"NSString\""};
+    objc_property_attribute_t ownerShip = {"&", ""};
+    objc_property_attribute_t nonatomic = {"N", ""};
+    objc_property_attribute_t backingIvar = {"V", "_myName"};
+    objc_property_attribute_t attrs[] = {type, ownerShip, nonatomic, backingIvar};
+    
+    class_addProperty([Student class], "myName", attrs, 4);
+    
+    
+    objc_property_attribute_t type1 = {"T", "@\"BOOL\""};
+    objc_property_attribute_t ownerShip1 = {"", ""};
+    objc_property_attribute_t nonatomic1 = {"N", ""};
+    objc_property_attribute_t backingIvar1 = {"V", "_sex"};
+    objc_property_attribute_t attrs1[] = {type1, ownerShip1, nonatomic1, backingIvar1};
+    
+    class_addProperty([Student class], "sex", attrs1, 4);
+    
+    
+    objc_property_t myName = class_getProperty([Student class], "myName");
+    
+    unsigned int outCount = 0;
+    
+    objc_property_t *property = class_copyPropertyList([Student class], &outCount);
+    
+    for (int i = 0; i< outCount; i++) {
+        
+        NSLog(@"属性名：%s", property_getName(property[i]));
+        NSLog(@"属性类型：%s", property_getAttributes(property[i]));
+    }
+
+note:
+    T : 成员属性类型
+    C，W，空，& ＝＝》 copy，weak，assign，strong
+    N，空 ＝＝》 nonatomic， atomic
+    V ＝＝》 变量的名称
+    objc_property_attribute_t变量保存的就是 " @property (nonatomic, weak) UIButton *btn " 声明。
+    
+
+```
+
+**获取方法**
+
+```
+BOOL class_addMethod(Class cls, SEL name,  IMP imp, const char *types)
+
+Method class_getInstanceMethod(Class aClass, SEL aSelector);
+
+Method class_getClassMethod(Class aClass, SEL aSelector);
+
+IMP  class_replaceMethod(Class cls, SEL name, IMP  imp, const char *types) —— 替换类中的方法，返回被替换的方法的函数指针
+
+IMP  class_getMethodImplementation(Class cls, SEL name)
+
+Method * class_copyMethodList(Class cls, unsigned int *outCount);
+
+```
+**例子**
+
+```
+
+
+```
+
+```
 给实例对象添加方法、成员变量、成员属性、其实就是向class结构体中添加东西，因为它们的定义都保存在class结构体中
 
 ```
+
+## 问题：
+1. 不知道这个参数有啥用？
 
 
 
