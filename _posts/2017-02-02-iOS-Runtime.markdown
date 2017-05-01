@@ -10,7 +10,7 @@ tags:
     - iOS-Runtime
 ---
 
-## OC中的结构体
+# OC中的结构体
 
 **Example:**
 
@@ -100,9 +100,152 @@ struct objc_method_list {
 } 
 ```
 
-## class_
+# 实验场景
+```
+-- Person定义
 
-**获取类属性**
+#import <Foundation/Foundation.h>
+#import "Man.h"
+@interface Person : NSObject <Man>
+
+@property (nonatomic, copy) NSString *name;
+
+- (void)eat;
+@end
+
+#import "Person.h"
+#import "Error.h"
+#import <objc/objc-runtime.h>
+@implementation Person
+
+- (void)eat{
+    NSLog(@"%@", self);
+    NSLog(@"Person");
+}
+
+- (NSString *)eat1:(NSString *)str{
+    return str;
+}
+
+- (void)eat2:(NSString *)str{
+    NSLog(@"test, %@, %@", str, [super class]);
+}
+
+void fooMethod(id obj, SEL _cmd)
+{
+    NSLog(@"Doing foo");
+}
+
+
+
++ (BOOL)resolveInstanceMethod:(SEL)aSEL
+{
+    if(aSEL == @selector(runPerson)){
+//        class_addMethod([self class], aSEL, (IMP)fooMethod, "v@");
+        return NO;
+    }
+    return [super resolveInstanceMethod:aSEL];
+}
+
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector
+{
+    NSString *sel = NSStringFromSelector(aSelector);
+    
+    if ([sel isEqualToString:@"runPerson"]) {
+        class_addMethod([[Error new] class], aSelector, (IMP)errorFun, "v@:@");
+        NSMethodSignature *sig = [[Error new] methodSignatureForSelector:aSelector];
+        return sig;
+    }
+    return [super methodSignatureForSelector:aSelector];
+}
+
+- (id)forwardingTargetForSelector:(SEL)aSelector
+{
+//    if (aSelector == @selector(runPerson)) {
+//        Error *error = [[Error alloc] init];
+//        class_addMethod([error class], aSelector, (IMP)errorFun, "v@");
+//        return error;
+//    }
+    
+    return nil;
+}
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation
+{
+    NSLog(@"%@", anInvocation);
+        Error *error = [[Error alloc] init];
+    if ([error respondsToSelector:anInvocation.selector]) {
+
+        [anInvocation invokeWithTarget:error];
+    }
+}
+@end
+
+--Student类定义
+
+#import "Person.h"
+#import "Man.h"
+
+// 定义结构体
+struct stu{
+    char * name;
+    int arg;
+};
+@interface Student : Person
+
+@property(nonatomic, strong) NSString *firstName;
+- (void)study;
+
++ (void)study;
+
+@end
+
+#import "Student.h"
+
+@implementation Student
+
+// 返回结构体的方法
+struct stu haha(){
+    struct stu s = {"aaa", 12};
+    return s;
+}
+
+- (struct stu) haha
+{
+    struct stu s = haha();
+    NSLog(@"%s", s.name);
+    return s;
+}
+
+- (void)eat{
+    NSLog(@"Student");
+    
+    [super eat];
+}
+
+- (void)study
+{
+    NSLog(@"学习");
+}
+
++ (void)study
+{
+    NSLog(@"学习");
+}
+
+@end
+
+#import "Student.h"
+@interface TestViewController ()
+
+@end
+
+```
+
+# class_
+
+## 获取类属性
 
 ```
 // 获取类属性
@@ -118,7 +261,7 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol)－－判断该类�
 
 ```
 
-**例子**
+## 类属性例子
 
 ```
 类：@interface TestViewController : UIViewController
@@ -146,7 +289,7 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol)－－判断该类�
 
 
 
-**获取实例对象的成员变量**
+## 获取实例对象的成员变量
 
 ```
 // 获取实例对象的成员变量
@@ -164,7 +307,7 @@ class_addIvar()函数只能在用户自定义创建类定义时才能使用，�
 
 ```
 
-**例子**
+## 成员变量例子
 
 ```
 - (void)testAFN{
@@ -226,12 +369,12 @@ class_addIvar()函数只能在用户自定义创建类定义时才能使用，�
 
 ```
 
-![](/img/iOS/2017-02-02-iOS-Runtime_1.png)
+![](/img/iOS/2017-02-02-iOS-Runtime_2.png)
 
 
 
 
-**获取实例对象的成员属性**
+## 获取实例对象的成员属性
 
 
 ```
@@ -249,7 +392,7 @@ BOOL class_addProperty(Class cls, const char *name, const objc_property_attribut
 
 ```
 
-**例子**
+## 成员属性例子
 
 ```
 
@@ -293,26 +436,204 @@ note:
 
 ```
 
-**获取方法**
+## 获取方法
 
 ```
+// 向类对象、元类对象添加方法
 BOOL class_addMethod(Class cls, SEL name,  IMP imp, const char *types)
-
+// 获取实例对象的实例方法结构体
 Method class_getInstanceMethod(Class aClass, SEL aSelector);
-
+// 获取类对象的类方法的结构体
 Method class_getClassMethod(Class aClass, SEL aSelector);
-
-IMP  class_replaceMethod(Class cls, SEL name, IMP  imp, const char *types) —— 替换类中的方法，返回被替换的方法的函数指针
-
+// 更换对象方法、类方法的函数指针
+IMP  class_replaceMethod(Class cls, SEL name, IMP  imp, const char *types)
+// 获取对象方法、类方法的函数指针
 IMP  class_getMethodImplementation(Class cls, SEL name)
-
+// 获取类对象、元类对象中的方法列表
 Method * class_copyMethodList(Class cls, unsigned int *outCount);
+// 替换替换类中方法的函数指针，返回原来方法的函数指针
+IMP class_replaceMethod(Class cls, SEL name, IMP imp, const char *types) 
 
 ```
-**例子**
+## 获取方法例子
 
 ```
 
+
+@implementation TestViewController
+
+- (void)methodTest
+{
+
+    // 获取类方法
+    Method class_M = class_getClassMethod([Student class], @selector(study));
+    
+    // 向Student类实例添加对象方法
+    class_addMethod([Student class], @selector(testMethod:), (IMP)testFunc, "v@:i");
+    // 获取类实例的对象方法
+    Method instance_M = class_getInstanceMethod([Student class], @selector(testMethod:));
+    Student *stu = [[Student alloc] init];
+    // 调用实例对象的方法
+    ((void (*)(id, Method, int))method_invoke)(stu, instance_M, 1);
+    
+    // 获取保存在类对象中的对象方法列表
+    unsigned int outCount = 0;
+    Method *method = class_copyMethodList([Student class], &outCount);
+    
+    for (int i = 0; i<outCount; i++) {
+        // 获取方法SEL
+        SEL method_name_sel = method_getName(method[i]);
+        const char * method_name = sel_getName(method_name_sel);
+        // 获取方法的返回类型 + 参数类型
+        const char * mehtod_type= method_getTypeEncoding(method[i]);
+        // 获取方法的返回类型
+        const char * method_returnType = method_copyReturnType(method[i]);
+        // 获取方法对应的函数指针
+        IMP imp = method_getImplementation(method[i]);
+        // 方法的参数个数
+        int method_arg = method_getNumberOfArguments(method[i]);
+        // 返回方法中的第n个参会
+        char *argType = method_copyArgumentType(method[i], 0);
+        
+        NSLog(@"SEL = %s, methodName = %s, methodType = %s, methodRetype = %s, args = %i", sel_getName(method_name_sel), method_name, mehtod_type, method_returnType, method_arg);
+    }
+    
+    IMP imp = class_getMethodImplementation([Student class], @selector(studyMath));
+    // 返回Student类中的haha方法的函数指针，haha方法的返回值为结构体，所以使用该方法。
+    IMP imp1 = class_getMethodImplementation_stret([Student class], @selector(haha));
+    // 使用class_getMethodImplementation方法返回haha()，程序直接crash。
+    struct stu s1 = ((struct stu(*)())imp)();
+    // 使用class_getMethodImplementation_stret方法返回haha()，该方法就是为了哪些返回结构体方法准备的
+    struct stu s = ((struct stu(*)())imp1)();
+    NSLog(@"%s   %i", s.name, s.arg);
+    
+    Student *stu1 = [Student new];
+    // 替换student类的study方法的函数指针。
+    IMP fun = class_replaceMethod([stu class], @selector(study), (IMP)run, "v@");
+    [stu study];
+    fun();
+}
+
+
+void run()
+{
+    NSLog(@"run");
+}
+@end
+
+```
+
+## 获取协议
+
+```
+／／ 添加向实例对象、类对象、元类对象添加协议
+ BOOL class_addProtocol(Class cls, Protocol *protocol) 
+ Protocol * __unsafe_unretained *class_copyProtocolList(Class cls, unsigned int *outCount)
+```
+
+## 获取协议例子
+
+```
+
+- (void)protocolTest
+{
+    Class stu = object_getClass([Student new]);
+    Class oldStu = object_getClass(stu);
+    NSLog(@"%p   ,  %p", stu, oldStu);
+    
+    // 向Student类添加协议
+    BOOL isSuccess = class_addProtocol(oldStu, @protocol(Man));
+    //  判断Student类是否遵循是否协议
+    BOOL isGet = class_conformsToProtocol([Student class], @protocol(Man));
+    
+    // 根据字符串获取协议对象
+    Protocol *protocols = objc_getProtocol("Man");
+    
+    // 动态创建协议定义
+    Protocol *newProtocol = objc_allocateProtocol("Animal");
+    // 添加协议中方法声明
+    protocol_addMethodDescription(newProtocol, @selector(doSomthing), "v@:", NO, YES);
+    // 添加该协议遵循的父协议。
+    protocol_addProtocol(newProtocol, protocols);
+    // 注册创建的协议定义
+    objc_registerProtocol(newProtocol);
+    
+    unsigned int outCount = 0;
+    class_addProtocol([Student class], newProtocol);
+    // 遍历Student类中遵循的协议列表
+    Protocol * __unsafe_unretained * protocol = class_copyProtocolList([Student class], &outCount);
+    
+    for (int i = 0; i<outCount; i++) {
+        // 获取协议名称
+        const char *name = protocol_getName(protocol[i]);
+        NSLog(@"%s", name);
+    }
+}
+
+```
+# object_
+
+## object_方法介绍
+
+```
+// 设置成员变量的值
+void object_setIvar(id object, Ivar ivar, id value)
+// 获取成员变量的值
+id object_getIvar(id object, Ivar ivar)
+// 获取类名称
+const char *object_getClassName(id obj)
+// 获取实例对象的类对象、获取类对象的元类对象
+Class object_getClass(id object)
+// 判断该对象是否不是实例对象
+BOOL object_isClass(id obj)
+```
+
+## 例子
+
+```
+    Student *stu = [Student new];
+    // 获取对象的类对象
+    Class clazz = object_getClass(stu);
+    // 获取类对象的元类对象
+    Class metaClazz = object_getClass(clazz);
+    // 获取对象的类名称
+    const char *className = object_getClassName(stu);
+    // 该对象是否为类对象
+    BOOL isClass = object_isClass(stu);
+    BOOL isClass1 = object_isClass(clazz);
+    BOOL isClass2 = object_isClass(metaClazz);
+    // 获取Student实例对象的成员变量firstName
+    Ivar ivar = class_getInstanceVariable([Student class], "_firstName");
+    // 设置Student实例对象的成员变量firstName的值
+    object_setIvar(stu, ivar, @"zp3sss");
+    // 获取成员变量的值
+    NSString *fristName = object_getIvar(stu, ivar);
+
+```
+
+![](/img/iOS/2017-02-02-iOS-Runtime_3.png)
+
+
+# objc_
+
+```
+id objc_getClass(const char *name)
+id objc_getRequiredClass(const char *name)
+```
+
+##例子
+
+```
+    id className = objc_getClass("Student");
+    id classNameStr = objc_lookUpClass("Student");
+    id requiredClass = objc_getRequiredClass("Student");
+    id metaClass = objc_getMetaClass("Student");
+    Protocol *protocol = objc_getProtocol("Man");
+    Student *stu = [Student new];
+    objc_setAssociatedObject(stu, @selector(className), @"className", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_getAssociatedObject(stu, @selector(className));
+    objc_setAssociatedObject(stu, @selector(className), nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
 
 ```
 
@@ -322,7 +643,7 @@ Method * class_copyMethodList(Class cls, unsigned int *outCount);
 ```
 
 ## 问题：
-1. 不知道这个参数有啥用？
+1. 不知道objc_property_t这个参数有啥用？
 
 
 
