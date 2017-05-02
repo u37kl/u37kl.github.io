@@ -616,33 +616,160 @@ BOOL object_isClass(id obj)
 
 # objc_
 
+## objc_方法介绍
+
 ```
-id objc_getClass(const char *name)
+// 根据字符串获取类对象，如果没有找到，则objc_getClass调用类处理程序回调
+id objc_getClass(const char *name) 
+// 根据字符串获取类对象，如果没有找到，则objc_lookUpClass不会调用类处理程序回调
+id objc_lookUpClass(const char *name)
+// 根据字符串获取类对象，如果没有找到，则程序崩溃，该函数认为编译时没有ZeroLink链接错误
 id objc_getRequiredClass(const char *name)
+// 根据字符串返回类对象的元类对象
+id objc_getMetaClass(const char *name)
+// 根据字符串获取协议对象
+Protocol *objc_getProtocol(const char *name)
+
+//  添加关联对象，如果value置为nil，将会删除关联对象，所有该方法即是添加，也是删除
+void objc_setAssociatedObject(id object, void *key, id value, objc_AssociationPolicy policy)
+// 获取关联对象
+id objc_getAssociatedObject(id object, void *key)
+// 移除该对象所有关联对象
+void objc_removeAssociatedObjects(id object)
+
+// runtime发送消息，调用返回基本类型、对象类型的函数(返回结构体试了试也行)，使用该函数时，要强转它的函数参数类型
+id objc_msgSend(id self, SEL op, ...)
+// runtime发送消息，调用返回结构体的函数
+void objc_msgSend_stret(void * stretAddr, id theReceiver, SEL theSelector, ...)
+// 调用父类的方法，前提也是强转它的函数参数类型
+id objc_msgSendSuper(struct objc_super *super, SEL op, ...)
+void objc_msgSendSuper_stret(struct objc_super *super, SEL op, ...)
+// 创建一个协议
+Protocol *objc_allocateProtocol(const char *name)
+// 将协议注册进入项目中
+void objc_registerProtocol(Protocol *proto)
+// 创建一个类定义,最后一个参数为设置一个额外空间，保存成员变量，如果不设置传入0
+objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
+// 将类定义注册进入项目中
+void objc_registerClassPair(Class cls)
+// 从项目中删除类定义
+void objc_disposeClassPair(Class cls)
+
 ```
 
 ##例子
 
 ```
+- (void)objcRuntime
+{
     id className = objc_getClass("Student");
+    id className1 = object_getClass(className); // 返回Student类的元类对象
     id classNameStr = objc_lookUpClass("Student");
     id requiredClass = objc_getRequiredClass("Student");
     id metaClass = objc_getMetaClass("Student");
     Protocol *protocol = objc_getProtocol("Man");
     Student *stu = [Student new];
+    // 将关联对象绑定在stu对象上。
     objc_setAssociatedObject(stu, @selector(className), @"className", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    // 获取stu对象上的关联对象
     objc_getAssociatedObject(stu, @selector(className));
+    // 删除stu的关联对象
     objc_setAssociatedObject(stu, @selector(className), nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
+    // 生成objc_super结构体，作为参数传入objc_msgSendSuper函数中
+    struct objc_super su = {(id)stu1, class_getSuperclass([Student class])};
+    // 调用父类的eat方法
+    ((void(*)(struct objc_super * , SEL))objc_msgSendSuper)(&su, @selector(eat));
+        
+
+
+    // 调用返回结构体的函数，使用objc_msgSend()也行。使用 "@@:i" 替换 "{wonman=*i}@:i"也可以。
+    class_addMethod([self class], @selector(testFunc1:), (IMP)testFunc1, "{wonman=*i}@:i");
+    struct WonMan won1 = ((struct WonMan  (*)(id, IMP, int))objc_msgSend)(self, (IMP)testFunc1, 12);
+    
+    －－调用返回结构体的方法
+    struct WonMan wonman;
+    class_addMethod([self class], @selector(testFunc2:), (IMP)testFunc2, "v{wonman=*i}@:i");
+    // 传入结构体指针，为结构体赋值。
+    ((void(*)(struct WonMan *, id, SEL, int))objc_msgSend_stret)(&wonman, self, @selector(testFunc2:), 13);
+    
+    －－ 调用返回OC对象的方法
+    class_addMethod([self class], @selector(testFunc3:), (IMP)testFunc3, "@@:i");
+    Student *stu2 = ((Student * (*)(id, SEL, int))objc_msgSend)(self, @selector(testFunc3:), 12);
+    
+    －－ 调用父类的方法
+    struct objc_super su = {(id)stu2, class_getSuperclass([Student class])};
+    ((void(*)(struct objc_super * , SEL))objc_msgSendSuper)(&su, @selector(eat));
+    
+    
+    // 运行时创建类
+    Class clazz = objc_allocateClassPair([Person class], "WoMan", 0);
+    
+    // 添加实例对象的成员变量，指针类型使用log2()函数包裹
+    class_addIvar(clazz, "firstName", class_getInstanceSize([NSString class]), log2(class_getInstanceSize([NSString class])), @encode(NSString *));
+    class_addIvar(clazz, "secondName", class_getInstanceSize([NSString class]), log2(class_getInstanceSize([NSString class])), @encode(NSString *));
+    class_addIvar(clazz, "sex", sizeof(BOOL), sizeof(BOOL), @encode(BOOL));
+    class_addIvar(clazz, "grade", sizeof(NSInteger), sizeof(NSInteger), @encode(NSInteger));
+    class_addIvar(clazz, "student", class_getInstanceSize([Student class]), log2(class_getInstanceSize([Student class])), @encode(Student *));
+    
+    // 将类注册进去
+    objc_registerClassPair(clazz);
+    // 创建自定义类的实例对象
+    id s = [[clazz alloc] init];
+    
+}
+
+// C函数定义  
+
+void testFunc(id obj, SEL s, int a){
+    NSLog(@"%@___%i", @"测试", a);
+}
+
+struct WonMan testFunc1(id obj, SEL s, int a){
+    
+    struct WonMan wonman = {
+        "haha",
+        a
+    };
+    
+    return wonman;
+}
+
+void testFunc2(struct WonMan * wonman, id obj, SEL s, int a){
+    
+    wonman->name = "wonman1";
+    wonman->age = a;
+}
+
+Student * testFunc3(id obj, SEL s, int a){
+    
+    Student *stu = [[Student alloc] init];
+    stu.firstName = @"Student对象";
+    
+    return stu;
+}
 
 ```
+![](/img/iOS/2017-02-02-iOS-Runtime_4.png)
+
+
+
+
+
+
+
+
+# note:
 
 ```
+objc_与object_区别，含object_前缀的方法涉及到OC对象，含objc_前缀的方法不会涉及到OC对象，即通过字符串获取OC对象。但是也有特殊的函数涉及到OC对象。
+
 给实例对象添加方法、成员变量、成员属性、其实就是向class结构体中添加东西，因为它们的定义都保存在class结构体中
 
+
 ```
 
-## 问题：
+# 问题：
 1. 不知道objc_property_t这个参数有啥用？
 
 
