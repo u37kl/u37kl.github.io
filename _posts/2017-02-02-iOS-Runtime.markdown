@@ -257,7 +257,10 @@ int class_getVersion(Class theClass)  －－ 获取该类的版本号
 
 // 类中方法、协议存在性判断
 BOOL class_respondsToSelector(Class cls, SEL sel) －－ 判断该类是否实现该方法
+
 BOOL class_conformsToProtocol(Class cls, Protocol *protocol)－－判断该类是否遵循某个协议
+
+
 
 ```
 
@@ -439,7 +442,7 @@ note:
 ## 获取方法
 
 ```
-// 向类对象、元类对象添加方法
+// 向类对象、元类对象的方法列表中添加方法(分别添加的是对象方法、类方法)，如果添加了已存在的SEL，添加失败
 BOOL class_addMethod(Class cls, SEL name,  IMP imp, const char *types)
 // 获取实例对象的实例方法结构体
 Method class_getInstanceMethod(Class aClass, SEL aSelector);
