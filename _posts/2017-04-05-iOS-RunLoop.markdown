@@ -7,7 +7,7 @@ author:     "Hux"
 header-img: "img/post-bg-rwd.jpg"
 header-mask: 0.3
 tags:
-    - 数据库
+    - RunLoop
 ---
 
 ## sqlite3的C语言API
