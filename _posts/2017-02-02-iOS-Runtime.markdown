@@ -6,6 +6,7 @@ date:       2017-02-02 12:00:00
 author:     "ZP"
 header-img: "img/post-bg-rwd.jpg"
 header-mask: 0.3
+catalog:    true
 tags:
     - iOS-Runtime
 ---
